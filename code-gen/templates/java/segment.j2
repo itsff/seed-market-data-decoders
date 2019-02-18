@@ -1,0 +1,193 @@
+/*
+
+ ######   #######  ########  ########          ######   ######## ##    ##
+##    ## ##     ## ##     ## ##               ##    ##  ##       ###   ##
+##       ##     ## ##     ## ##               ##        ##       ####  ##
+##       ##     ## ##     ## ######   ####### ##   #### ######   ## ## ##
+##       ##     ## ##     ## ##               ##    ##  ##       ##  ####
+##    ## ##     ## ##     ## ##               ##    ##  ##       ##   ###
+ ######   #######  ########  ########          ######   ######## ##    ##
+
+  Notice: This file has been generated from a template. Do not modify.
+
+*/
+
+package com.seedcx.marketdata.msg;
+
+import com.seedcx.marketdata.Input;
+import com.seedcx.marketdata.Output;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public class {{ segment.name | pascal }}
+{
+    public static final int EXPECTED_WIRE_SIZE = 0
+    {% for f in segment.all_fields %}
+        + {{ f.size }} // {{ f.name | camel }}
+    {% endfor %}
+        ;
+
+    {% for f in segment.fields %}
+    private {% if gen.is_ref_type(f.type) %}@NotNull {% endif %}{{ gen.get_lang_type(f.type) }} {{ f.name | camel }};
+    {% endfor %}
+
+    {% if segment.has_fields %}
+    protected {{ segment.name | pascal }} ()
+    {
+    }
+
+    public {{ segment.name | pascal }} (
+        {% for f in segment.fields %}
+        {{ '' }}{% if gen.is_ref_type(f.type) %}@NotNull {% endif %}{{ gen.get_lang_type(f.type) }} {{ f.name | camel }}{% if not loop.last %},
+        {% endif %}
+        {% endfor %}
+        )
+    {
+        {% for f in segment.fields %}
+        this.{{ f.name | camel }} = {{ f.name | camel }};
+        {% endfor %}
+    }
+
+    {% for f in segment.fields %}
+    public {% if gen.is_ref_type(f.type) %}@NotNull {% endif %}{{ gen.get_lang_type(f.type) }}
+    get{{ f.name | pascal }} ()
+    {
+        return this.{{ f.name | camel }};
+    }
+
+    {% endfor %}
+
+    {% else %}
+    public {{ segment.name | pascal }} ()
+    {
+    }
+    {% endif %}
+
+    @Override
+    public @NotNull java.lang.String
+    toString ()
+    {
+        {% if segment.has_fields %}
+        return "{{ segment.name | pascal }} {"
+            {% for f in segment.fields %}
+            + "{% if not loop.first %}, {% endif %}{{ f.name | camel }}=" + this.{{ f.name | camel }}
+            {% endfor %}
+            + "}";
+        {% else %}
+        return "{{ segment.name | pascal }}";
+        {% endif %}
+    }
+
+    {% if segment.has_fields %}
+    @Override
+    public int
+    hashCode ()
+    {
+        return java.util.Objects.hash(
+            {% for f in segment.fields %}
+            {{ '' }}this.{{ f.name | camel }}{% if not loop.last %},
+            {% endif %}
+            {% endfor %}
+            );
+    }
+
+    @Override
+    public boolean
+    equals (@Nullable Object o)
+    {
+        if (this == o) { return true; }
+        if (o == null || getClass() != o.getClass()) { return false; }
+
+        {{ segment.name | pascal }} that = ({{ segment.name | pascal }}) o;
+
+        return true
+            {% for f in segment.fields %}
+            {% if gen.is_ref_type(f.type) %}
+            && java.util.Objects.equals(this.{{ f.name | camel }}, that.{{ f.name | camel }})
+            {% else %}
+            && this.{{ f.name | camel }} == that.{{ f.name | camel }}
+            {% endif %}
+            {% endfor %}
+            ;
+    }
+    {% endif %}
+
+    public static @NotNull {{ segment.name | pascal }}
+    fromInput (@NotNull Input input)
+    {
+        {{ segment.name | pascal }} msg = new {{ segment.name | pascal }}();
+
+        {% for f in segment.all_fields %}
+        // {{ f.name | camel }}
+        {% if f.is_padding %}
+        input.skipBytes({{ f.size }});
+        {% else %}
+        msg.{{ f.name | camel }} = input.{{ gen.reader_for_type(f.type) }}({% if f.is_text %}{{ f.size }}{% endif %});
+        {% endif %}
+
+        {% endfor %}
+        return msg;
+    }
+
+    public void
+    writeTo (@NotNull Output output)
+    {
+        {% for f in segment.all_fields %}
+        // {{ f.name | camel }}
+        {% if f.is_padding %}
+        output.writePadding({{ f.size }});
+        {% else %}
+        output.{{ gen.writer_for_type(f.type) }}(this.{{ f.name | camel }}{% if f.is_text %}, {{ f.size }}{% endif %});
+        {% endif %}
+
+        {% endfor %}
+    }
+
+    public static
+    @NotNull Builder
+    newBuilder ()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        {% for f in segment.fields %}
+        private {% if gen.is_ref_type(f.type) %}@NotNull {% endif %}{{ gen.get_lang_type(f.type) }} {{ f.name | camel }};
+        {% endfor %}
+
+        private Builder () {}
+
+        public
+        @NotNull {{ segment.name | pascal }}
+        build ()
+        {
+            return new {{ segment.name | pascal }}(
+            {% for f in segment.fields %}
+            {{ '    ' }}this.{{ f.name | camel }}{% if not loop.last %},
+            {% endif %}
+            {% endfor %});
+        }
+
+        {% for f in segment.fields %}
+        public
+        {{ '' }}{% if gen.is_ref_type(f.type) %}@NotNull {% endif %}{{ gen.get_lang_type(f.type) }}
+        get{{ f.name | pascal }} ()
+        {
+            return this.{{ f.name | camel }};
+        }
+
+        {% endfor %}
+
+        {% for f in segment.fields %}
+        public
+        @NotNull Builder
+        set{{ f.name | pascal }} ({% if gen.is_ref_type(f.type) %}@NotNull {% endif %}{{ gen.get_lang_type(f.type) }} value)
+        {
+            this.{{ f.name | camel }} = value;
+            return this;
+        }
+
+        {% endfor %}
+    }
+}

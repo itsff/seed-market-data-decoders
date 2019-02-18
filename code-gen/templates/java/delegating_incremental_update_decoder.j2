@@ -1,0 +1,133 @@
+/*
+
+ ######   #######  ########  ########          ######   ######## ##    ##
+##    ## ##     ## ##     ## ##               ##    ##  ##       ###   ##
+##       ##     ## ##     ## ##               ##        ##       ####  ##
+##       ##     ## ##     ## ######   ####### ##   #### ######   ## ## ##
+##       ##     ## ##     ## ##               ##    ##  ##       ##  ####
+##    ## ##     ## ##     ## ##               ##    ##  ##       ##   ###
+ ######   #######  ########  ########          ######   ######## ##    ##
+
+  Notice: This file has been generated from a template. Do not modify.
+
+*/
+
+package com.seedcx.marketdata;
+
+import com.seedcx.marketdata.msg.MessageHeader;
+import com.seedcx.marketdata.msg.PacketHeader;
+import org.jetbrains.annotations.NotNull;
+
+
+public class DelegatingIncrementalUpdateDecoder
+    extends IncrementalUpdateDecoder
+{
+    public interface Listener
+    {
+        boolean
+        onPacketHeader (
+            @NotNull PacketHeader packetHeader);
+
+        void
+        onHeartbeat (
+            @NotNull PacketHeader packetHeader);
+
+        boolean
+        onMessageHeader (
+            long instrumentId,
+            long sequenceNumber,
+            @NotNull PacketHeader packetHeader,
+            @NotNull MessageHeader messageHeader);
+
+        void
+        onUnknownMessage (
+            long instrumentId,
+            long sequenceNumber,
+            @NotNull PacketHeader packetHeader,
+            @NotNull MessageHeader messageHeader);
+
+        {% for msg in messages %}
+        void
+        on{{ msg.name | pascal }} (
+            long instrumentId,
+            long sequenceNumber,
+            @NotNull PacketHeader packetHeader,
+            @NotNull MessageHeader messageHeader,
+            @NotNull com.seedcx.marketdata.msg.{{ msg.name | pascal }} msg);
+
+        {% endfor %}
+    }
+
+    protected @NotNull Listener listener;
+
+    public
+    DelegatingIncrementalUpdateDecoder (
+        @NotNull Listener listener)
+    {
+        this.listener = listener;
+    }
+
+    @Override protected
+    boolean
+    onPacketHeader (@NotNull PacketHeader packetHeader)
+    {
+        return this.listener.onPacketHeader(packetHeader);
+    }
+
+    @Override protected
+    void
+    onHeartbeat (@NotNull PacketHeader packetHeader)
+    {
+        this.listener.onHeartbeat(packetHeader);
+    }
+
+    @Override protected
+    boolean
+    onMessageHeader (
+        long instrumentId,
+        long sequenceNumber,
+        @NotNull PacketHeader packetHeader,
+        @NotNull MessageHeader messageHeader)
+    {
+        return this.listener.onMessageHeader(
+            instrumentId,
+            sequenceNumber,
+            packetHeader,
+            messageHeader);
+    }
+
+    @Override protected
+    void
+    onUnknownMessage (
+        long instrumentId,
+        long sequenceNumber,
+        @NotNull PacketHeader packetHeader,
+        @NotNull MessageHeader messageHeader)
+    {
+        this.listener.onUnknownMessage(
+            instrumentId,
+            sequenceNumber,
+            packetHeader,
+            messageHeader);
+    }
+
+    {% for msg in messages %}
+    @Override protected
+    void
+    on{{ msg.name | pascal }} (
+        long instrumentId,
+        long sequenceNumber,
+        @NotNull PacketHeader packetHeader,
+        @NotNull MessageHeader messageHeader,
+        @NotNull com.seedcx.marketdata.msg.{{ msg.name | pascal }} msg)
+    {
+        this.listener.on{{ msg.name | pascal }}(
+            instrumentId,
+            sequenceNumber,
+            packetHeader,
+            messageHeader,
+            msg);
+    }
+
+    {% endfor %}
+}

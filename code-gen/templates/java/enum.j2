@@ -1,0 +1,54 @@
+/*
+
+ ######   #######  ########  ########          ######   ######## ##    ##
+##    ## ##     ## ##     ## ##               ##    ##  ##       ###   ##
+##       ##     ## ##     ## ##               ##        ##       ####  ##
+##       ##     ## ##     ## ######   ####### ##   #### ######   ## ## ##
+##       ##     ## ##     ## ##               ##    ##  ##       ##  ####
+##    ## ##     ## ##     ## ##               ##    ##  ##       ##   ###
+ ######   #######  ########  ########          ######   ######## ##    ##
+
+  Notice: This file has been generated from a template. Do not modify.
+
+*/
+
+package com.seedcx.marketdata.enums;
+
+import org.jetbrains.annotations.Nullable;
+
+public enum {{ enum.name | pascal }}
+{
+    {% for i in enum.items %}
+    {{ i.name | upper }}({{ i.value }}){% if not loop.last %},
+    {% endif %}
+    {% endfor %}
+    ;
+
+
+    private final int value;
+
+    {{ enum.name | pascal }} (int value)
+    {
+        this.value = value;
+    }
+
+    public int value () { return this.value; }
+
+    public static
+    @Nullable {{ enum.name | pascal }}
+    fromValue (int value)
+    {
+        {{ enum.name | pascal }} result = null;
+
+        switch(value)
+        {
+        {% for i in enum.items %}
+        case {{ i.value }}:
+            result = {{ enum.name | pascal }}.{{ i.name | upper }};
+            break;
+        {% endfor %}
+        }
+
+        return result;
+    }
+}

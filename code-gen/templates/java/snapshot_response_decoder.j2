@@ -1,0 +1,158 @@
+/*
+
+ ######   #######  ########  ########          ######   ######## ##    ##
+##    ## ##     ## ##     ## ##               ##    ##  ##       ###   ##
+##       ##     ## ##     ## ##               ##        ##       ####  ##
+##       ##     ## ##     ## ######   ####### ##   #### ######   ## ## ##
+##       ##     ## ##     ## ##               ##    ##  ##       ##  ####
+##    ## ##     ## ##     ## ##               ##    ##  ##       ##   ###
+ ######   #######  ########  ########          ######   ######## ##    ##
+
+  Notice: This file has been generated from a template. Do not modify.
+
+*/
+
+package com.seedcx.marketdata;
+
+import com.seedcx.marketdata.msg.SnapshotMessageHeader;
+import com.seedcx.marketdata.msg.AddOrder;
+import com.seedcx.marketdata.enums.MessageType;
+import org.jetbrains.annotations.NotNull;
+
+public class SnapshotResponseDecoder
+{
+    public
+    void
+    decode (@NotNull Input input)
+    {
+        SnapshotMessageHeader msgHeader = readResponseHeader(input);
+
+        this.onMessageHeader(msgHeader);
+
+        if (msgHeader.getMsgType() == MessageType.SNAPSHOT_SUCCESS_RESPONSE.value())
+        {
+            com.seedcx.marketdata.msg.SnapshotSuccessResponse msg = readSnapshotSuccessResponse(input);
+            this.onSnapshotSuccessResponse(msgHeader, msg);
+
+            final long orderCount = msg.getNumberOfOrders();
+            for (long i = 0; i < orderCount; ++i)
+            {
+                AddOrder order = readAddOrder(input, msg.getOrderMessageSize());
+                this.onOrder(
+                    i,
+                    orderCount,
+                    msgHeader,
+                    msg,
+                    order);
+            }
+        }
+        else if (msgHeader.getMsgType() == MessageType.SNAPSHOT_FAILED_RESPONSE.value())
+        {
+            com.seedcx.marketdata.msg.SnapshotFailedResponse msg = readSnapshotFailedResponse(input);
+            this.onSnapshotFailedResponse(msgHeader, msg);
+        }
+        else
+        {
+            input.skipBytes(msgHeader.getMessageLength());
+            this.onUnknownMessage(msgHeader);
+        }
+    }
+
+    protected void
+    onMessageHeader (
+        @NotNull SnapshotMessageHeader messageHeader)
+    {
+    }
+
+    protected
+    void
+    onUnknownMessage (
+        @NotNull SnapshotMessageHeader messageHeader)
+    {
+    }
+
+    protected
+    void
+    onOrder (
+        long orderNumber,
+        long totalOrderCount,
+        @NotNull SnapshotMessageHeader messageHeader,
+        @NotNull SnapshotSuccessResponse response,
+        @NotNull AddOrder order)
+    {
+    }
+
+    {% for msg in messages %}
+    protected
+    void
+    on{{ msg.name | pascal }} (
+        @NotNull SnapshotMessageHeader messageHeader,
+        @NotNull com.seedcx.marketdata.msg.{{ msg.name | pascal }} msg)
+    {
+    }
+
+    {% endfor %}
+
+    protected
+    @NotNull SnapshotMessageHeader
+    readMessageHeader (@NotNull Input input)
+    {
+        SnapshotMessageHeader msgHeader = SnapshotMessageHeader.fromInput(input);
+
+        int sizeDelta = msgHeader.getHeaderLength() - SnapshotMessageHeader.EXPECTED_WIRE_SIZE;
+        if (sizeDelta > 0)
+        {
+            // Looks like the header is longer. Skip over the extra bytes.
+            input.skipBytes(sizeDelta);
+        }
+        else if (sizeDelta < 0)
+        {
+            throw new MessageTooShortException("Snapshot message header shorter than anticipated.");
+        }
+        return msgHeader;
+    }
+
+    protected
+    @NotNull AddOrder
+    readOrder (
+        @NotNull Input input,
+        long orderSize)
+    {
+        AddOrder result = AddOrder.fromInput(input);
+        int sizeDelta = orderSize - AddOrder.EXPECTED_WIRE_SIZE;
+        if (sizeDelta > 0)
+        {
+            // Looks like the message is longer. Skip over the extra bytes.
+            input.skipBytes(sizeDelta);
+        }
+        else if (sizeDelta < 0)
+        {
+            throw new MessageTooShortException("Order msg shorter than anticipated.");
+        }
+        return result;
+    }
+
+
+    {% for msg in messages %}
+    protected
+    @NotNull com.seedcx.marketdata.msg.{{ msg.name | pascal }}
+    read{{ msg.name | pascal }} (
+        @NotNull SnapshotMessageHeader msgHeader,
+        @NotNull Input input)
+    {
+        com.seedcx.marketdata.msg.{{ msg.name | pascal }} result = com.seedcx.marketdata.msg.{{ msg.name | pascal }}.fromInput(input);
+        int sizeDelta = msgHeader.getMessageLength() - com.seedcx.marketdata.msg.{{ msg.name | pascal }}.EXPECTED_WIRE_SIZE;
+        if (sizeDelta > 0)
+        {
+            // Looks like the message is longer. Skip over the extra bytes.
+            input.skipBytes(sizeDelta);
+        }
+        else if (sizeDelta < 0)
+        {
+            throw new MessageTooShortException("{{ msg.name | pascal }} msg shorter than anticipated.");
+        }
+        return result;
+    }
+
+    {% endfor %}
+}

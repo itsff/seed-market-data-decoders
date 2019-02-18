@@ -1,0 +1,161 @@
+<protocol>
+
+  <segment name="packet_header">
+    <!-- Total length of all data (including this header) in the packet -->
+    <field type="uint16"        name="total_length" />
+
+    <!-- Length of this header (includes the `total_length` field) -->
+    <field type="uint16"        name="packet_header_length" />
+
+    <field type="uint8"         name="protocol_version" />
+    <padding size="1" />
+    <field type="uint16"        name="message_count" />
+
+    <field type="instrument_id" name="instrument_id" />
+    <field type="sequence_num"  name="sequence_num" />
+    <field type="time_stamp"    name="sending_time" />
+
+    <padding size="24" />
+  </segment>
+
+  <segment name="message_header">
+    <!-- Length of this header -->
+    <field type="uint16"       name="header_length" />
+
+    <!-- Message length (does not include the header) -->
+    <field type="uint16"       name="message_length" />
+
+    <field type="uint8"        name="type" />
+    <padding size="27" />
+  </segment>
+
+  <segment name="add_order" is_msg="true">
+    <field type="order_id"   name="order_id" />
+    <field type="price"      name="price" />
+    <field type="order_size" name="remaining_size" />
+    <field type="side"       name="side" />
+    <padding size="7" />
+  </segment>
+
+  <segment name="replace_order" is_msg="true">
+    <field type="order_id"   name="original_order_id" />
+    <field type="order_id"   name="new_order_id" />
+    <field type="price"      name="price" />
+    <field type="order_size" name="remaining_size" />
+    <field type="bool"       name="lost_priority" />
+    <padding size="7" />
+  </segment>
+
+  <segment name="delete_order" is_msg="true">
+    <field type="order_id" name="order_id" />
+  </segment>
+
+  <segment name="trading_status" is_msg="true">
+    <field type="trading_status" name="status" />
+    <padding size="7" />
+  </segment>
+
+  <segment name="clear_book" is_msg="true">
+  </segment>
+
+  <segment name="session_end" is_msg="true">
+  </segment>
+
+  <segment name="trade" is_msg="true">
+    <field type="execution_id" name="execution_id" />
+    <field type="price"        name="price" />
+    <field type="order_size"   name="executed_size" />
+    <padding size="16" />
+  </segment>
+
+  <segment name="trade_break" is_msg="true">
+    <field type="execution_id" name="execution_id" />
+  </segment>
+
+  <segment name="snapshot_request" is_msg="true">
+    <field type="uint16" name="length" />
+    <field type="uint8"  name="request_msg_type" />
+    <field type="uint8"  name="protocol_version" />
+    <field type="text"   name="sender_comp_id" size="12" />
+    <field type="instrument_id" name="instrument_id" />
+  </segment>
+
+  <segment name="snapshot_message_header">
+    <field type="uint16" name="header_length" />
+    <field type="uint16" name="message_length" />
+    <field type="uint8"  name="protocol_version" />
+    <field type="uint8"  name="msg_type" />
+    <padding size="2" />
+    <field type="time_stamp"  name="sending_time" />
+    <padding size="24" />
+  </segment>
+
+  <segment name="snapshot_failed_response" is_msg="true">
+    <field type="instrument_id" name="instrument_id" />
+    <field type="snapshot_fail_reason" name="reason" />
+    <padding size="7" />
+  </segment>
+
+  <segment name="snapshot_success_response" is_msg="true">
+    <field type="instrument_id" name="instrument_id" />
+    <field type="sequence_num" name="as_of_sequence_number" />
+    <field type="trading_status" name="trading_status" />
+    <padding size="1" />
+    <field type="uint16" name="order_message_length" />
+    <field type="uint32" name="number_of_orders" />
+  </segment>
+
+  <enum name="message_type">
+    <item name="clear_book" value="0" />
+    <item name="add_order" value="1" />
+    <item name="replace_order" value="2" />
+    <item name="delete_order" value="3" />
+    <item name="trading_status" value="4" />
+    <item name="trade" value="5" />
+    <item name="trade_break" value="6" />
+    <item name="session_end" value="7" />
+    <item name="snapshot_request" value="20" />
+    <item name="snapshot_failed_response" value="21" />
+    <item name="snapshot_success_response" value="22" />
+  </enum>
+
+  <enum name="side">
+    <item name="bid"   value="0"/>
+    <item name="ask"   value="1"/>
+  </enum>
+
+  <enum name="trading_status">
+    <item name="closed" value="0" />
+    <item name="available" value="1" />
+    <item name="opening_auction" value="2" />
+    <item name="open" value="3" />
+    <item name="pre_close" value="4" />
+    <item name="halted" value="5" />
+  </enum>
+
+  <enum name="snapshot_failed_response">
+    <item name="malformed_request"   value="0" />
+    <item name="invalid_instrument_id"   value="1" />
+    <item name="snapshot_not_available"   value="2" />
+    <item name="invalid_credentials"   value="3" />
+    <item name="quota_exceeded"   value="4" />
+    <item name="unsupported_protocol"   value="5" />
+  </enum>
+
+  <message_map name="multicast" enum_name="message_type">
+    <msg name="clear_book"      enum="clear_book" />
+    <msg name="add_order"       enum="add_order" />
+    <msg name="replace_order"   enum="replace_order" />
+    <msg name="delete_order"    enum="delete_order" />
+    <msg name="trading_status"  enum="trading_status" />
+    <msg name="trade"           enum="trade" />
+    <msg name="trade_break"     enum="trade_break" />
+    <msg name="session_end"     enum="session_end" />
+  </message_map>
+
+  <message_map name="snapshot" enum_name="message_type">
+    <msg name="snapshot_failed_response"    enum="snapshot_failed_response" />
+    <msg name="snapshot_success_response"   enum="snapshot_success_response" />
+  </message_map>
+
+</protocol>
