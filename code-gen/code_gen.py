@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import java_generator
 
 if __name__ == '__main__':
