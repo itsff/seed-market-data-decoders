@@ -3,6 +3,7 @@ package com.seedcx.marketdata;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 public class ExchangeAssignedId
@@ -24,7 +25,9 @@ public class ExchangeAssignedId
     @NotNull String
     toString() {
         final ByteBuffer byteBuffer = ByteBuffer.wrap(this.bytes);
-        final long hi = byteBuffer.getLong();
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        final long hi = byteBuffer.getLong(8);
 
         if (hi == 0)
         {

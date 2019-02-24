@@ -3,6 +3,7 @@ package com.seedcx.marketdata;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class ByteBufferInputWrapper
         implements Input
@@ -11,6 +12,7 @@ public class ByteBufferInputWrapper
 
     public ByteBufferInputWrapper(@NotNull ByteBuffer buffer) {
         this.buffer = buffer;
+        this.buffer.order(ByteOrder.LITTLE_ENDIAN);
     }
 
     @Override
@@ -20,7 +22,8 @@ public class ByteBufferInputWrapper
 
     @Override
     public int readUnsignedShort() {
-        return Short.toUnsignedInt(this.buffer.getShort());
+        short value = this.buffer.getShort();
+        return Short.toUnsignedInt(value);
     }
 
     @Override

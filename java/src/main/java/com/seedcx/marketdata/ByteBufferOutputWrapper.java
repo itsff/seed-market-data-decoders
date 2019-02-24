@@ -3,6 +3,7 @@ package com.seedcx.marketdata;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class ByteBufferOutputWrapper
     implements Output
@@ -11,6 +12,7 @@ public class ByteBufferOutputWrapper
 
     public ByteBufferOutputWrapper(@NotNull ByteBuffer buffer) {
         this.buffer = buffer;
+        this.buffer.order(ByteOrder.LITTLE_ENDIAN);
     }
 
     @Override
