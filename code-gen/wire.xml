@@ -133,7 +133,7 @@
     <item name="halted" value="5" />
   </enum>
 
-  <enum name="snapshot_failed_response">
+  <enum name="snapshot_fail_reason">
     <item name="malformed_request"   value="0" />
     <item name="invalid_instrument_id"   value="1" />
     <item name="snapshot_not_available"   value="2" />

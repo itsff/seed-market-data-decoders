@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+}
+
+sourceCompatibility = 1.8
+
+jar {
+    manifest {
+        attributes 'Main-Class' : 'com.seedcx.marketdata.sniffer.Sniffer'
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':marketdata')
+    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
+    compile group: 'org.jetbrains', name: 'annotations', version: '17.0.0'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}

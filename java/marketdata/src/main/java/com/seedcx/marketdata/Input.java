@@ -2,7 +2,6 @@ package com.seedcx.marketdata;
 
 import com.seedcx.marketdata.enums.Side;
 import com.seedcx.marketdata.enums.SnapshotFailReason;
-import com.seedcx.marketdata.enums.SnapshotFailedResponse;
 import com.seedcx.marketdata.enums.TradingStatus;
 
 
@@ -18,7 +17,7 @@ public interface Input
     OrderId readOrderId ();
     ExecutionId readExecutionId ();
 
-    default int skipBytes(int n)
+    default long skipBytes(long n)
     {
         while (n --> 0)
         {

@@ -44,15 +44,6 @@ public class DataInputWrapper
     }
 
     @Override
-    public int skipBytes(int n) {
-        try {
-            return this.input.skipBytes(n);
-        } catch (IOException e) {
-            throw new BufferUnderflowException();
-        }
-    }
-
-    @Override
     public int readUnsignedShort() {
         try {
             return this.input.readUnsignedShort();

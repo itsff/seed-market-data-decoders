@@ -1,2 +1,6 @@
-rootProject.name = 'marketdata'
+rootProject.name = 'marketdata-decoders'
+
+include 'marketdata'
+include 'sniffer'
+include 'snapshot'
 
