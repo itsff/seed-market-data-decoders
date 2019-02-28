@@ -11,51 +11,38 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.MembershipKey;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Sniffer
     implements DelegatingIncrementalUpdateDecoder.Listener
 {
     private static final int MAX_UDP_PACKET_SIZE = 65535 - 8 - 20;
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
-    private static NetworkInterface
-    findNetworkInterface (String iface)
-            throws SocketException, IOException
-    {
-        if (iface == null || iface.isEmpty())
-        {
-            MulticastSocket sock = new MulticastSocket();
-            return sock.getNetworkInterface();
-        }
+    private final NetworkInterface iface;
+    private final InetAddress group;
+    private final int port;
+    private final boolean printHeartbeats;
 
-        InetAddress ip;
-        try {
-            ip = InetAddress.getByName(iface);
-            return NetworkInterface.getByInetAddress(ip);
-        } catch (UnknownHostException e) {
-            return NetworkInterface.getByName(iface);
-        }
+    public Sniffer(String multicastIp, int port, String iface, boolean printHeartbeats)
+            throws IOException {
+        this.group = InetAddress.getByName(multicastIp);
+        this.port = port;
+        this.iface = findNetworkInterface(iface);
+        this.printHeartbeats = printHeartbeats;
     }
 
-    private static boolean
-    isHeartbeat (@NotNull PacketHeader packetHeader)
-    {
-        return packetHeader.getMessageCount() == 0;
-    }
-
-    private void run (String multicastIp, int port, String networkInterfaceIp, boolean showHeartbeats)
+    private void run ()
             throws Exception
     {
-        NetworkInterface iface = findNetworkInterface(networkInterfaceIp);
-        InetAddress group = InetAddress.getByName(multicastIp);
-
         DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)
                 .setOption(StandardSocketOptions.SO_REUSEADDR, true)
-                .bind(new InetSocketAddress(port));
-        MembershipKey key = dc.join(group, iface);
+                .bind(new InetSocketAddress(this.port));
+        MembershipKey key = dc.join(this.group, this.iface);
         if (!key.isValid())
         {
-            System.err.println("Problem joining multicast group!");
-            System.exit(1);
+           throw new Exception("Problem joining multicast group!");
         }
 
         ByteBuffer byteBuffer = ByteBuffer.allocate(MAX_UDP_PACKET_SIZE);
@@ -120,74 +107,150 @@ public class Sniffer
             return;
         }
 
-        Sniffer sniffer = new Sniffer();
-        sniffer.run(cmd.getOptionValue("mcast"),
-                    Integer.parseInt(cmd.getOptionValue("port")),
-                    cmd.getOptionValue("iface"),
-                    cmd.hasOption("heartbeats"));
+        Sniffer sniffer = new Sniffer(cmd.getOptionValue("mcast"),
+                Integer.parseInt(cmd.getOptionValue("port")),
+                cmd.getOptionValue("iface"),
+                Boolean.parseBoolean(cmd.getOptionValue("heartbeats", "false")));
+        sniffer.run();
+    }
+
+    private static NetworkInterface
+    findNetworkInterface (String iface)
+            throws IOException
+    {
+        if (iface == null || iface.isEmpty())
+        {
+            // Get the "any" (0.0.0.0) network interface
+            MulticastSocket sock = new MulticastSocket();
+            return sock.getNetworkInterface();
+        }
+
+        InetAddress ip;
+        try {
+            ip = InetAddress.getByName(iface);
+            return NetworkInterface.getByInetAddress(ip);
+        } catch (UnknownHostException e) {
+            return NetworkInterface.getByName(iface);
+        }
+    }
+
+
+    private void log(long instrumentId,
+                     long sequenceNumber,
+                     @NotNull PacketHeader packetHeader,
+                     @NotNull Object msg)
+    {
+        StringBuilder sb = new StringBuilder()
+                .append(LocalDateTime.now().format(this.dateTimeFormatter))
+                .append("|seq:").append(sequenceNumber)
+                .append("|sent:").append(packetHeader.getSendingTime())
+                .append("|inst:").append(instrumentId)
+                .append("|").append(msg);
+        System.out.println(sb.toString());
     }
 
     @Override
     public boolean onPacketHeader(@NotNull PacketHeader packetHeader) {
-        if (!isHeartbeat(packetHeader))
-        {
-            System.out.println(packetHeader);
-        }
+        // Do process this packet
         return true;
     }
 
     @Override
     public void onHeartbeat(@NotNull PacketHeader packetHeader) {
-        System.out.println("heartbeat: " + packetHeader);
+        if (this.printHeartbeats) {
+            this.log(packetHeader.getInstrumentId(),
+                     packetHeader.getSequenceNum(),
+                     packetHeader,
+                    "Heartbeat");
+        }
     }
 
     @Override
-    public boolean onMessageHeader(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader) {
+    public boolean onMessageHeader(long instrumentId,
+                                   long sequenceNumber,
+                                   @NotNull PacketHeader packetHeader,
+                                   @NotNull MessageHeader messageHeader) {
+        // Do process this message
         return true;
     }
 
     @Override
-    public void onUnknownMessage(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader) {
-        System.out.println("\tunknown msg. " + messageHeader);
+    public void onUnknownMessage(long instrumentId,
+                                 long sequenceNumber,
+                                 @NotNull PacketHeader packetHeader,
+                                 @NotNull MessageHeader messageHeader) {
+        this.log(instrumentId, sequenceNumber, packetHeader, "Unknown message: " + messageHeader);
     }
 
     @Override
-    public void onClearBook(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader, @NotNull ClearBook msg) {
-        System.out.println("\t" + msg);
+    public void onClearBook(long instrumentId,
+                            long sequenceNumber,
+                            @NotNull PacketHeader packetHeader,
+                            @NotNull MessageHeader messageHeader,
+                            @NotNull ClearBook msg) {
+        this.log(instrumentId, sequenceNumber, packetHeader, msg);
     }
 
     @Override
-    public void onAddOrder(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader, @NotNull AddOrder msg) {
-        System.out.println("\t" + msg);
+    public void onAddOrder(long instrumentId,
+                           long sequenceNumber,
+                           @NotNull PacketHeader packetHeader,
+                           @NotNull MessageHeader messageHeader,
+                           @NotNull AddOrder msg) {
+        this.log(instrumentId, sequenceNumber, packetHeader, msg);
     }
 
     @Override
-    public void onReplaceOrder(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader, @NotNull ReplaceOrder msg) {
-        System.out.println("\t" + msg);
+    public void onReplaceOrder(long instrumentId,
+                               long sequenceNumber,
+                               @NotNull PacketHeader packetHeader,
+                               @NotNull MessageHeader messageHeader,
+                               @NotNull ReplaceOrder msg) {
+        this.log(instrumentId, sequenceNumber, packetHeader, msg);
     }
 
     @Override
-    public void onDeleteOrder(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader, @NotNull DeleteOrder msg) {
-        System.out.println("\t" + msg);
+    public void onDeleteOrder(long instrumentId,
+                              long sequenceNumber,
+                              @NotNull PacketHeader packetHeader,
+                              @NotNull MessageHeader messageHeader,
+                              @NotNull DeleteOrder msg) {
+        this.log(instrumentId, sequenceNumber, packetHeader, msg);
     }
 
     @Override
-    public void onTradingStatus(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader, @NotNull TradingStatus msg) {
-        System.out.println("\t" + msg);
+    public void onTradingStatus(long instrumentId,
+                                long sequenceNumber,
+                                @NotNull PacketHeader packetHeader,
+                                @NotNull MessageHeader messageHeader,
+                                @NotNull TradingStatus msg) {
+        this.log(instrumentId, sequenceNumber, packetHeader, msg);
     }
 
     @Override
-    public void onTrade(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader, @NotNull Trade msg) {
-        System.out.println("\t" + msg);
+    public void onTrade(long instrumentId,
+                        long sequenceNumber,
+                        @NotNull PacketHeader packetHeader,
+                        @NotNull MessageHeader messageHeader,
+                        @NotNull Trade msg) {
+        this.log(instrumentId, sequenceNumber, packetHeader, msg);
     }
 
     @Override
-    public void onTradeBreak(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader, @NotNull TradeBreak msg) {
-        System.out.println("\t" + msg);
+    public void onTradeBreak(long instrumentId,
+                             long sequenceNumber,
+                             @NotNull PacketHeader packetHeader,
+                             @NotNull MessageHeader messageHeader,
+                             @NotNull TradeBreak msg) {
+        this.log(instrumentId, sequenceNumber, packetHeader, msg);
     }
 
     @Override
-    public void onSessionEnd(long instrumentId, long sequenceNumber, @NotNull PacketHeader packetHeader, @NotNull MessageHeader messageHeader, @NotNull SessionEnd msg) {
-        System.out.println("\t" + msg);
+    public void onSessionEnd(long instrumentId,
+                             long sequenceNumber,
+                             @NotNull PacketHeader packetHeader,
+                             @NotNull MessageHeader messageHeader,
+                             @NotNull SessionEnd msg) {
+        this.log(instrumentId, sequenceNumber, packetHeader, msg);
     }
 }
