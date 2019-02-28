@@ -1,13 +1,11 @@
 plugins {
-    id 'java'
+    id 'application'
 }
 
 sourceCompatibility = 1.8
 
-jar {
-    manifest {
-        attributes 'Main-Class' : 'com.seedcx.marketdata.sniffer.Sniffer'
-    }
+application {
+    mainClassName = 'com.seedcx.marketdata.sniffer.Sniffer'
 }
 
 repositories {
