@@ -1,7 +1,7 @@
 package com.seedcx.marketdata.snapshot;
 
 import com.seedcx.marketdata.ByteBufferOutputWrapper;
-import com.seedcx.marketdata.DelegatingSnapshotResponseDecoder;
+import com.seedcx.marketdata.SnapshotResponseDecoder;
 import com.seedcx.marketdata.Output;
 import com.seedcx.marketdata.enums.MessageType;
 import com.seedcx.marketdata.msg.*;
@@ -67,7 +67,7 @@ public class Snapshot
 
         // Now let's collect the responses
         ResponsePrinter printer = new ResponsePrinter(System.out);
-        DelegatingSnapshotResponseDecoder decoder = new DelegatingSnapshotResponseDecoder(printer);
+        SnapshotResponseDecoder decoder = new SnapshotResponseDecoder(printer);
 
         for (Long instrumentId : this.instrumentIds)
         {
@@ -86,7 +86,7 @@ public class Snapshot
 
 }
 
-class ResponsePrinter implements DelegatingSnapshotResponseDecoder.Listener
+class ResponsePrinter implements SnapshotResponseDecoder.Listener
 {
     private final @NotNull PrintStream printStream;
 

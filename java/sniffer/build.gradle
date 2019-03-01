@@ -5,7 +5,7 @@ plugins {
 sourceCompatibility = 1.8
 
 application {
-    mainClassName = 'com.seedcx.marketdata.sniffer.Sniffer'
+    mainClassName = 'com.seedcx.marketdata.sniffer.Main'
 }
 
 repositories {

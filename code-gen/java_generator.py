@@ -44,10 +44,10 @@ class JavaGenerator(BaseGenerator):
         pass
 
     def _generate_decoders(self):
+        self._generate_abstract_incremental_update_decoder()
         self._generate_incremental_update_decoder()
-        self._generate_delegating_incremental_update_decoder()
         self._generate_snapshot_response_decoder()
-        self._generate_delegating_snapshot_response_decoder()
+        self._generate_abstract_snapshot_response_decoder()
 
     def _generate_incremental_update_decoder(self):
         file_name = 'IncrementalUpdateDecoder.java'
@@ -64,13 +64,13 @@ class JavaGenerator(BaseGenerator):
             f.write(result)
         pass
 
-    def _generate_delegating_incremental_update_decoder(self):
-        file_name = 'DelegatingIncrementalUpdateDecoder.java'
+    def _generate_abstract_incremental_update_decoder(self):
+        file_name = 'AbstractIncrementalUpdateDecoder.java'
         out_path = self.out_path
         os.makedirs(out_path, exist_ok=True)
         file_path = os.path.join(out_path, file_name)
 
-        t = self.j2env.get_template('delegating_incremental_update_decoder.j2')
+        t = self.j2env.get_template('abstract_incremental_update_decoder.j2')
 
         msg_map = next((mm for mm in self.msg_maps if mm.name == "multicast"))
         result = t.render(messages=msg_map.items, gen=self)
@@ -94,13 +94,13 @@ class JavaGenerator(BaseGenerator):
             f.write(result)
         pass
 
-    def _generate_delegating_snapshot_response_decoder(self):
-        file_name = 'DelegatingSnapshotResponseDecoder.java'
+    def _generate_abstract_snapshot_response_decoder(self):
+        file_name = 'AbstractSnapshotResponseDecoder.java'
         out_path = self.out_path
         os.makedirs(out_path, exist_ok=True)
         file_path = os.path.join(out_path, file_name)
 
-        t = self.j2env.get_template('delegating_snapshot_response_decoder.j2')
+        t = self.j2env.get_template('abstract_snapshot_response_decoder.j2')
 
         msg_map = next((mm for mm in self.msg_maps if mm.name == "snapshot"))
         result = t.render(messages=msg_map.items, gen=self)
