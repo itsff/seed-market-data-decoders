@@ -13,7 +13,7 @@ sourceSets {
         java {
             srcDirs = [
                 'src/main/java/',
-                '../../code-gen/out/java'
+                '../../generated-code/java'
             ]
         }
     }
