@@ -1,0 +1,48 @@
+#pragma once
+/*
+
+ ######   #######  ########  ########          ######   ######## ##    ##
+##    ## ##     ## ##     ## ##               ##    ##  ##       ###   ##
+##       ##     ## ##     ## ##               ##        ##       ####  ##
+##       ##     ## ##     ## ######   ####### ##   #### ######   ## ## ##
+##       ##     ## ##     ## ##               ##    ##  ##       ##  ####
+##    ## ##     ## ##     ## ##               ##    ##  ##       ##   ###
+ ######   #######  ########  ########          ######   ######## ##    ##
+
+  Notice: This file has been generated from a template. Do not modify.
+
+*/
+
+#include <cstdint>
+#include <ostream>
+#include <string>
+
+namespace seedcx {
+namespace enums {
+
+{% for enum in enums %}
+enum class {{ enum.name | snake }} : uint8_t
+{
+    {% for item in enum.items %}
+    {{ "%-30s" | format(item.name | snake) }} = {{ item.value }},
+    {% endfor %}
+};
+
+std::ostream &
+operator<< (std::ostream &, const {{ enum.name | snake }} &e);
+
+{% endfor %}
+
+} // namespace enums
+} // namespace seedcx
+
+
+
+namespace std {
+
+{% for enum in enums %}
+std::string
+to_string (const ::seedcx::enums::{{ enum.name | snake }} &{{ enum.name | snake }});
+
+{% endfor %}
+} // namespace std

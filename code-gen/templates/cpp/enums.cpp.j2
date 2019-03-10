@@ -1,0 +1,63 @@
+/*
+
+ ######   #######  ########  ########          ######   ######## ##    ##
+##    ## ##     ## ##     ## ##               ##    ##  ##       ###   ##
+##       ##     ## ##     ## ##               ##        ##       ####  ##
+##       ##     ## ##     ## ######   ####### ##   #### ######   ## ## ##
+##       ##     ## ##     ## ##               ##    ##  ##       ##  ####
+##    ## ##     ## ##     ## ##               ##    ##  ##       ##   ###
+ ######   #######  ########  ########          ######   ######## ##    ##
+
+  Notice: This file has been generated from a template. Do not modify.
+
+*/
+
+#include "seedcx/enums.hpp"
+
+namespace seedcx {
+namespace enums {
+
+{% for enum in enums %}
+
+std::ostream &
+operator<< (std::ostream &os, const {{ enum.name | snake }} &e)
+{
+    switch (e)
+    {
+    {% for item in enum.items %}
+    case {{ enum.name | snake }}::{{ item.name | snake }}:
+        os << "{{ item.name | snake }}";
+        return os;
+    {% endfor %}
+    };
+
+    os << "unknown (" << static_cast<int>(e) << ")";
+    return os;
+}
+
+{% endfor %}
+
+} // namespace enums
+} // namespace seedcx
+
+
+
+namespace std {
+
+{% for enum in enums %}
+std::string
+to_string (const ::seedcx::enums::{{ enum.name | snake }} &{{ enum.name | snake }})
+{
+    switch ({{ enum.name | snake }})
+    {
+    {% for item in enum.items %}
+    case ::seedcx::enums::{{ enum.name | snake }}::{{ item.name | snake }}:
+        return "{{ item.name | snake }}";
+    {% endfor %}
+    };
+
+    return "unknown (" + to_string(static_cast<int>({{ enum.name | snake }})) + ")";
+}
+
+{% endfor %}
+} // namespace std

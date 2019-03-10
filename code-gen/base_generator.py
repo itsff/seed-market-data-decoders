@@ -139,7 +139,7 @@ class BaseGenerator:
 
             for f in seg_elem:
                 if f.tag == 'padding':
-                    field = Field(name='padding'.format(padding_count),
+                    field = Field(name='padding{0}'.format(padding_count),
                                   field_type=FieldType.padding,
                                   size=int(f.get('size')))
                     padding_count += 1

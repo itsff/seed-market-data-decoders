@@ -1,0 +1,45 @@
+/*
+
+ ######   #######  ########  ########          ######   ######## ##    ##
+##    ## ##     ## ##     ## ##               ##    ##  ##       ###   ##
+##       ##     ## ##     ## ##               ##        ##       ####  ##
+##       ##     ## ##     ## ######   ####### ##   #### ######   ## ## ##
+##       ##     ## ##     ## ##               ##    ##  ##       ##  ####
+##    ## ##     ## ##     ## ##               ##    ##  ##       ##   ###
+ ######   #######  ########  ########          ######   ######## ##    ##
+
+  Notice: This file has been generated from a template. Do not modify.
+
+*/
+
+#include "seedcx/market_data.hpp"
+
+namespace seedcx {
+
+{% for segment in segments %}
+
+std::ostream &
+operator<< (std::ostream &os, const {{ segment.name | snake }} &msg)
+{
+    {% if segment.has_fields %}
+    os << "{{ segment.name | snake }}="
+    {% for field in segment.fields %}
+    {% if loop.first %}
+       << "{ {{ field.name | snake }}="
+    {% else %}
+       << ", {{ field.name | snake }}="
+    {% endif %}
+       << msg.{{ field.name | snake }}
+    {% endfor %}
+       << " }";
+    {% else %}
+    os << "{{ segment.name | snake }}={}";
+    {% endif %}
+
+    return os;
+}
+
+{% endfor %}
+
+
+} // namespace seedcx

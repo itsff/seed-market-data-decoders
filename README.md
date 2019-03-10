@@ -8,6 +8,7 @@ It is still a work in progress.
 
 * `code-gen` Python code generator which produces code for different target programming languages.
 * `java` Java decoders and samples.
+* `cpp` C++ decoders and samples.
 
 ## Building
 

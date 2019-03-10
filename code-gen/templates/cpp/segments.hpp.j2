@@ -1,0 +1,94 @@
+#pragma once
+/*
+
+ ######   #######  ########  ########          ######   ######## ##    ##
+##    ## ##     ## ##     ## ##               ##    ##  ##       ###   ##
+##       ##     ## ##     ## ##               ##        ##       ####  ##
+##       ##     ## ##     ## ######   ####### ##   #### ######   ## ## ##
+##       ##     ## ##     ## ##               ##    ##  ##       ##  ####
+##    ## ##     ## ##     ## ##               ##    ##  ##       ##   ###
+ ######   #######  ########  ########          ######   ######## ##    ##
+
+  Notice: This file has been generated from a template. Do not modify.
+
+*/
+
+#include "seedcx/enums.hpp"
+#include "seedcx/exch_assigned_id.hpp"
+
+#include <cstdint>
+#include <cstddef>
+#include <ostream>
+
+namespace seedcx {
+
+const uint8_t CURRENT_PROTOCOL_VERSION = 2;
+
+struct time_stamp_t
+{
+    uint64_t nanos_since_epoch;
+
+    bool
+    operator< (const time_stamp_t &other) const
+    {
+        return this->nanos_since_epoch < other.nanos_since_epoch;
+    }
+
+    friend std::ostream&
+    operator<< (std::ostream &os, const time_stamp_t &ts)
+    {
+        os << ts.nanos_since_epoch;
+        return os;
+    }
+};
+
+using instrument_id_t = uint64_t;
+using sequence_num_t  = uint64_t;
+
+using price_t         = int64_t;
+using order_size_t    = uint64_t;
+
+using order_id_t      = exch_assigned_id;
+using execution_id_t  = exch_assigned_id;
+
+{% for segment in segments %}
+#pragma pack(push)
+struct {{ segment.name | snake }}
+{
+    static constexpr size_t EXPECTED_WIRE_SIZE = 0
+    {% for f in segment.all_fields %}
+        + {{ f.size }} // {{ f.name | snake }}
+    {% endfor %}
+        ;
+
+    {% for f in segment.all_fields %}
+    {% if f.is_padding %}
+    {{ "%-25s" | format(gen.get_lang_type(f.type)) }} {{ f.name | snake }}[{{ f.size }}];
+    {% else %}
+    {{ "%-25s" | format(gen.get_lang_type(f.type)) }} {{ f.name | snake }};
+    {% endif %}
+    {% endfor %}
+};
+#pragma pack(pop)
+
+std::ostream &
+operator<< (std::ostream &, const {{ segment.name | snake }} &msg);
+
+// ------------------
+
+{% endfor %}
+
+
+inline sequence_num_t
+next_expected_seq_num (const packet_header &pkt_header)
+{
+    return pkt_header.sequence_num + pkt_header.message_count;
+}
+
+inline bool
+is_heartbeat (const packet_header &pkt_header)
+{
+    return pkt_header.message_count == 0;
+}
+
+} // namespace seedcx

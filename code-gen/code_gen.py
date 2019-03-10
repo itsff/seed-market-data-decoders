@@ -2,9 +2,11 @@
 import sys
 import argparse
 import java_generator
+import cpp_generator
 
 name_to_gen = {
-        'java': java_generator.JavaGenerator
+        'java': java_generator.JavaGenerator,
+        'cpp': cpp_generator.CppGenerator
     }
 
 
@@ -35,7 +37,7 @@ def main():
 
     gen = gen_class(args.schema, args.templates, args.out)
     gen.generate()
-    print('done')
+    print(args.gen, 'done')
 
 
 if __name__ == '__main__':

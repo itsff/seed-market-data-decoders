@@ -1,0 +1,417 @@
+#pragma once
+/*
+
+ ######   #######  ########  ########          ######   ######## ##    ##
+##    ## ##     ## ##     ## ##               ##    ##  ##       ###   ##
+##       ##     ## ##     ## ##               ##        ##       ####  ##
+##       ##     ## ##     ## ######   ####### ##   #### ######   ## ## ##
+##       ##     ## ##     ## ##               ##    ##  ##       ##  ####
+##    ## ##     ## ##     ## ##               ##    ##  ##       ##   ###
+ ######   #######  ########  ########          ######   ######## ##    ##
+
+  Notice: This file has been generated from a template. Do not modify.
+
+*/
+
+#include "seedcx/market_data.hpp"
+
+namespace seedcx {
+
+template <typename TIncrementalUpdateObserver>
+size_t
+decode_incremental_update (const char * const buffer,
+                           TIncrementalUpdateObserver &observer)
+{
+    const packet_header *pkt_hdr = reinterpret_cast<const packet_header *>(buffer);
+
+    if (is_heartbeat(*pkt_hdr))
+    {
+        observer.on_heartbeat(pkt_hdr->instrument_id,
+                              pkt_hdr->sequence_num,
+                              *pkt_hdr);
+        return pkt_hdr->total_length;
+    }
+
+    observer.on_packet_header(pkt_hdr->instrument_id,
+                              pkt_hdr->sequence_num,
+                              *pkt_hdr);
+
+    sequence_num_t seq_num = pkt_hdr->sequence_num;
+    const char          *p = buffer + pkt_hdr->packet_header_length;
+
+    for (size_t m = 0;
+         m < pkt_hdr->message_count;
+         ++m, ++seq_num)
+    {
+        const message_header *msg_hdr = reinterpret_cast<const message_header *>(p);
+        observer.on_message_header(
+            pkt_hdr->instrument_id,
+            seq_num,
+            *pkt_hdr,
+            *msg_hdr);
+
+        p = p + msg_hdr->header_length;
+
+        switch (msg_hdr->type)
+        {
+        {% for msg in messages %}
+        case {{ msg.enum.value }}:
+            observer.on_{{ msg.name | snake }}(
+                pkt_hdr->instrument_id,
+                seq_num,
+                *pkt_hdr,
+                *msg_hdr,
+                *reinterpret_cast<const {{ msg.name | snake }}*>(p));
+            break;
+        {% endfor %}
+        default:
+            observer.on_unknown_message(
+                pkt_hdr->instrument_id,
+                seq_num,
+                *pkt_hdr,
+                *msg_hdr,
+                p);
+        };
+
+        p = p + msg_hdr->message_length;
+    }
+
+    return pkt_hdr->total_length;
+}
+
+
+
+class abstract_incremental_update_observer
+{
+public:
+    virtual ~abstract_incremental_update_observer () = default;
+
+public:
+    virtual void
+    on_heartbeat (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr) = 0;
+
+    virtual void
+    on_packet_header (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr) = 0;
+
+    virtual void
+    on_message_header (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr,
+        const message_header  &msg_hdr) = 0;
+
+    virtual void
+    on_unknown_message (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr,
+        const message_header  &msg_hdr,
+        const char            *message) = 0;
+
+    {% for msg in messages %}
+    virtual void
+    on_{{ msg.name | snake }} (
+        const instrument_id_t         instrument_id,
+        const sequence_num_t          sequence_num,
+        const packet_header          &pkt_hdr,
+        const message_header         &msg_hdr,
+        const {{ msg.name | snake }} &message) = 0;
+
+    {% endfor %}
+};
+
+
+class incremental_update_observer
+    : public abstract_incremental_update_observer
+{
+    template <typename T>
+    void ignore (T &&) { }
+
+public:
+    virtual void
+    on_heartbeat (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr) override
+    {
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+    }
+
+    virtual void
+    on_packet_header (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr) override
+    {
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+    }
+
+    virtual void
+    on_message_header (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr,
+        const message_header  &msg_hdr) override
+    {
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+        ignore(msg_hdr);
+    }
+
+    virtual void
+    on_unknown_message (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr,
+        const message_header  &msg_hdr,
+        const char            *message) override
+    {
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+        ignore(msg_hdr);
+        ignore(message);
+    }
+
+    {% for msg in messages %}
+    virtual void
+    on_{{ msg.name | snake }} (
+        const instrument_id_t         instrument_id,
+        const sequence_num_t          sequence_num,
+        const packet_header          &pkt_hdr,
+        const message_header         &msg_hdr,
+        const {{ msg.name | snake }} &message) override
+    {
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+        ignore(msg_hdr);
+        ignore(message);
+    }
+
+    {% endfor %}
+};
+
+
+template <typename derived>
+class incremental_update_handler_base
+{
+private:
+    template <typename T>
+    void ignore (T &&) { }
+
+    derived &
+    impl ()
+    {
+        return *static_cast<derived *>(this);
+    }
+
+    const derived &
+    impl () const
+    {
+        return *static_cast<const derived *>(this);
+    }
+
+public:
+    void
+    on_heartbeat (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr)
+    {
+        impl().handle_heartbeat(
+            instrument_id,
+            sequence_num,
+            pkt_hdr);
+    }
+
+    void
+    on_packet_header (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr)
+    {
+        impl().handle_packet_header(
+            instrument_id,
+            sequence_num,
+            pkt_hdr);
+    }
+
+    void
+    on_message_header (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr,
+        const message_header  &msg_hdr)
+    {
+        impl().handle_message_header(
+            instrument_id,
+            sequence_num,
+            pkt_hdr,
+            msg_hdr);
+    }
+
+    void
+    on_unknown_message (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr,
+        const message_header  &msg_hdr,
+        const char            *message)
+    {
+        impl().handle_unknown_message(
+            instrument_id,
+            sequence_num,
+            pkt_hdr,
+            msg_hdr,
+            message);
+    }
+
+    {% for msg in messages %}
+    void
+    on_{{ msg.name | snake }} (
+        const instrument_id_t         instrument_id,
+        const sequence_num_t          sequence_num,
+        const packet_header          &pkt_hdr,
+        const message_header         &msg_hdr,
+        const {{ msg.name | snake }} &message)
+    {
+        impl().handle_{{ msg.name | snake }}(
+            instrument_id,
+            sequence_num,
+            pkt_hdr,
+            msg_hdr,
+            message);
+    }
+
+    {% endfor %}
+protected:
+    //! \brief Handler for heartbeats.
+    //!
+    //! Default implementation does nothing.
+    //! To provide your own behavior, re-define this function
+    //! in derived class.
+    //!
+    void
+    handle_heartbeat (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr)
+    {
+        // Default implementation does nothing.
+        // To provide your own behavior, re-define this function
+        // in derived class.
+
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+    }
+
+    //! \brief Handler for the packet message.
+    //!
+    //! Default implementation does nothing.
+    //! To provide your own behavior, re-define this function
+    //! in derived class.
+    //!
+    void
+    handle_packet_header (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr)
+    {
+        // Default implementation does nothing.
+        // To provide your own behavior, re-define this function
+        // in derived class.
+
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+    }
+
+    //! \brief Handler for the message header.
+    //!
+    //! Default implementation does nothing.
+    //! To provide your own behavior, re-define this function
+    //! in derived class.
+    //!
+    void
+    handle_message_header (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr,
+        const message_header  &msg_hdr)
+    {
+        // Default implementation does nothing.
+        // To provide your own behavior, re-define this function
+        // in derived class.
+
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+        ignore(msg_hdr);
+    }
+
+    //! \brief Handler for any unknown message.
+    //!
+    //! Default implementation does nothing.
+    //! To provide your own behavior, re-define this function
+    //! in derived class.
+    //!
+    void
+    handle_unknown_message (
+        const instrument_id_t  instrument_id,
+        const sequence_num_t   sequence_num,
+        const packet_header   &pkt_hdr,
+        const message_header  &msg_hdr,
+        const char            *message)
+    {
+        // Default implementation does nothing.
+        // To provide your own behavior, re-define this function
+        // in derived class.
+
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+        ignore(msg_hdr);
+        ignore(message);
+    }
+
+    {% for msg in messages %}
+    //! \brief Handler for the `{{ msg.name | snake }}` message.
+    //!
+    //! Default implementation does nothing.
+    //! To provide your own behavior, re-define this function
+    //! in derived class.
+    //!
+    void
+    handle_{{ msg.name | snake }} (
+        const instrument_id_t         instrument_id,
+        const sequence_num_t          sequence_num,
+        const packet_header          &pkt_hdr,
+        const message_header         &msg_hdr,
+        const {{ msg.name | snake }} &message)
+    {
+        ignore(instrument_id);
+        ignore(sequence_num);
+        ignore(pkt_hdr);
+        ignore(msg_hdr);
+        ignore(message);
+    }
+
+    {% endfor %}
+};
+
+
+
+} // namespace seedcx
