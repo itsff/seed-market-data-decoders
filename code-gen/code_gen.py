@@ -3,10 +3,12 @@ import sys
 import argparse
 import java_generator
 import cpp_generator
+import python_generator
 
 name_to_gen = {
         'java': java_generator.JavaGenerator,
-        'cpp': cpp_generator.CppGenerator
+        'cpp': cpp_generator.CppGenerator,
+        'python': python_generator.PythonGenerator,
     }
 
 

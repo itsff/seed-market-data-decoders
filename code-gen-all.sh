@@ -14,3 +14,4 @@ OUT=./generated-code/
 # Generate some code
 python3 ./code-gen/code_gen.py -s ${SCHEMA} -t ${TEMPLATES} -o ${OUT} -g java
 python3 ./code-gen/code_gen.py -s ${SCHEMA} -t ${TEMPLATES} -o ${OUT} -g cpp
+python3 ./code-gen/code_gen.py -s ${SCHEMA} -t ${TEMPLATES} -o ${OUT} -g python

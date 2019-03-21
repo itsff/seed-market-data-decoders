@@ -1,0 +1,76 @@
+import struct
+import enum
+
+
+class classproperty(property):
+    def __get__(self, cls, owner):
+        return classmethod(self.fget).__get__(None, owner)()
+
+
+{% for enum in enums %}
+class {{ enum.name | pascal }}Enum(enum.IntEnum):
+    {% for item in enum.items %}
+    {{ item.name | snake }} = {{ item.value }},
+    {% endfor %}
+
+
+{% endfor %}
+
+
+{% for segment in segments %}
+
+class {{ segment.name | pascal }}:
+    _EXPECTED_WIRE_SIZE = (0
+    {% for f in segment.all_fields %}
+        + {{ f.size }}  # {{ f.name | snake }}
+    {% endfor %}
+        )
+
+    @classproperty
+    def expected_wire_size(cls):
+        return cls._EXPECTED_WIRE_SIZE
+
+    def __init__(self):
+        {% for f in segment.fields %}
+        self.{{ f.name | snake }} = None
+        {% endfor %}
+        pass
+
+    def __repr__(self):
+        {% if segment.has_fields %}
+        return ("{{ segment.name | pascal }} {"
+            {% for f in segment.fields %}
+            "{% if not loop.first %}, {% endif %}{{ f.name | snake }}={{ '{' }}{{ loop.index - 1 }}{{ '}' }}"
+            {% endfor %}
+            "}").format(
+            {% for f in segment.fields %}
+            {{ '' }}self.{{ f.name | snake }}{% if not loop.last %},
+            {% endif %}
+            {% endfor %})
+        {% else %}
+        return "{{ segment.name | pascal }}"
+        {% endif %}
+
+    @staticmethod
+    def parse_from(buffer, offset):
+        {% if segment.has_fields %}
+        fmt = '{% for f in segment.all_fields %}{{ gen.get_struct_format(f) }}{% endfor %}'
+        values = struct.unpack_from(fmt, buffer, offset)
+
+        me = {{ segment.name | pascal }}()
+        {% for f in segment.fields %}
+        me.{{ f.name | snake }} = {% if gen.get_lang_type(f) %}{{ gen.get_lang_type(f) }}(values[{{ loop.index - 1 }}]){% else %}values[{{ loop.index - 1 }}]{% endif %}
+
+        {% endfor %}
+
+        return me
+        {% else %}
+        return {{ segment.name | pascal }}()
+        {% endif %}
+
+{% endfor %}
+
+
+def is_heartbeat(packet_header: PacketHeader):
+    return packet_header.message_count == 0
+
