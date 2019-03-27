@@ -2,6 +2,51 @@ import struct
 import enum
 
 
+class ExchangeAssignedId:
+    def __init__(self, byte_payload: bytes):
+        self._bytes = byte_payload
+
+    def __repr__(self):
+        return repr(self._bytes)
+
+    def __str__(self):
+        hi = int.from_bytes(self._bytes,
+                            byteorder='little',
+                            signed=False)
+        if hi == 0:
+            # Return result as number
+            val = int.from_bytes(self._bytes,
+                                 byteorder='little',
+                                 signed=False)
+            return str(val)
+        else:
+            # TODO: return base58.encode(self._bytes)
+            return repr(self)
+
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, self.__class__):
+            return self._bytes == o._bytes
+        return False
+
+    def __ne__(self, o: object) -> bool:
+        return not self.__eq__(o)
+
+    def __hash__(self) -> int:
+        if self._bytes:
+            return self._bytes.__hash__()
+        return 0
+
+
+class OrderId(ExchangeAssignedId):
+    def __init__(self, byte_payload: bytes):
+        super().__init__(byte_payload)
+
+
+class ExecutionId(ExchangeAssignedId):
+    def __init__(self, byte_payload: bytes):
+        super().__init__(byte_payload)
+
+
 class classproperty(property):
     def __get__(self, cls, owner):
         return classmethod(self.fget).__get__(None, owner)()
