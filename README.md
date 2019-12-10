@@ -1,7 +1,6 @@
 # Market Data Decoders
 
-This repository contains referece decoders for Seed CX Binary Market Data.
-It is still a work in progress. 
+This repository contains referece decoders for [Seed CX Binary Market Data](https://www.seedcx.com/api/bin-md/). It is still a work in progress. 
 
 
 ## Layout
